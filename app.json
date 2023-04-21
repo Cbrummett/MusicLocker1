@@ -4,10 +4,10 @@
     "slug": "MusicLocker",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/images/MusicNote.png",
     "userInterfaceStyle": "light",
     "splash": {
-      "image": "./assets/splash.png",
+      "image": "./assets/images/MusicNote.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
