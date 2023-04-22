@@ -1,3 +1,4 @@
+import React, { useEffect, useState, useCallback } from "react";
 import {
     Text,
     Pressable,
@@ -7,32 +8,55 @@ import {
     View,
     RefreshControl,
  } from "react-native";
+ import * as SQLite from 'expo-sqlite';
+import { MusicDB } from "../data/MusicDB";
 export default function Home({navigation}) {
-    const songs = [
-        { id: 1, songTitle: 'One Kiss', artist: 'Calvin Harris feat Dua Lipa' },
-        { id: 2, songTitle: 'One Kiss', artist: 'Calvin Harris feat Dua Lipa' },
-        { id: 3, songTitle: 'One Kiss', artist: 'Calvin Harris feat Dua Lipa' },
-        { id: 4, songTitle: 'One Kiss', artist: 'Calvin Harris feat Dua Lipa' },
-        { id: 5, songTitle: 'One Kiss', artist: 'Calvin Harris feat Dua Lipa' },
-        { id: 6, songTitle: 'One Kiss', artist: 'Calvin Harris feat Dua Lipa' },
-        { id: 7, songTitle: 'One Kiss', artist: 'Calvin Harris feat Dua Lipa' },
-        { id: 8, songTitle: 'One Kiss', artist: 'Calvin Harris feat Dua Lipa' },
-        { id: 9, songTitle: 'One Kiss', artist: 'Calvin Harris feat Dua Lipa' },
-        { id: 10, songTitle: 'One Kiss', artist: 'Calvin Harris feat Dua Lipa' },
-        { id: 11, songTitle: 'One Kiss', artist: 'Calvin Harris feat Dua Lipa' },
-        { id: 12, songTitle: 'One Kiss', artist: 'Calvin Harris feat Dua Lipa' },
-        { id: 13, songTitle: 'One Kiss', artist: 'Calvin Harris feat Dua Lipa' },
-        { id: 14, songTitle: 'One Kiss', artist: 'Calvin Harris feat Dua Lipa' },
-        { id: 15, songTitle: 'One Kiss', artist: 'Calvin Harris feat Dua Lipa' },
-        { id: 16, songTitle: 'One Kiss', artist: 'Calvin Harris feat Dua Lipa' },
-        { id: 17, songTitle: 'One Kiss', artist: 'Calvin Harris feat Dua Lipa' },
-        { id: 18, songTitle: 'One Kiss', artist: 'Calvin Harris feat Dua Lipa' },
-        { id: 19, songTitle: 'One Kiss', artist: 'Calvin Harris feat Dua Lipa' },
-        { id: 20, songTitle: 'One Kiss', artist: 'Calvin Harris feat Dua Lipa' },
+    const [songs, setSongs] = useState([]);
+    const [refreshing, setRefreshing] = useState(false);
         
-    ]
-    // flatlist item
-    //-----------------------------------------------------------------------------
+    
+// grabs data
+//-----------------------------------------------------------------------------
+    useEffect(() => {
+        const db = SQLite.openDatabase('db.Music');
+        db.transaction((tx) => {
+        tx.executeSql(
+            'SELECT * FROM MUSIC',
+            [],
+            (_txOBJ, results) => {
+            var temp = [];
+            for (let i = 0; i < results.rows.length; ++i){
+                temp.push(results.rows.item(i));
+              }
+            setSongs(temp);
+            }
+        );
+        });
+    }, []);
+
+// Refreshes the flatlist on pull down
+//-----------------------------------------------------------------------------
+    const onRefresh = useCallback(() => {
+        setRefreshing(true);
+        const db = SQLite.openDatabase('db.Music');
+        db.transaction((tx) => {
+        tx.executeSql(
+            'SELECT * FROM MUSIC;',
+            [],
+            (_txOBJ, results) => {
+            var temp = [];
+            for (let i = 0; i < results.rows.length; ++i){
+                temp.push(results.rows.item(i));
+            }
+            setSongs(temp);
+            setRefreshing(false);
+            }
+        );
+        });
+    }, [refreshing]);
+
+// flatlist item
+//-----------------------------------------------------------------------------
     const Item = ({item}) => {
         var songTitle = item.songTitle;
         var artist = item.artist
@@ -40,20 +64,19 @@ export default function Home({navigation}) {
         return(
             <View style={styles.row}>
                 <Text style={styles.itemText}> {songTitle} - {artist}</Text>
-                <Pressable style={styles.deleteButton}>
+                <Pressable style={styles.deleteButton} onPress={() => DeleteSong(item.id)}>
                     <Text style={styles.deleteButtonText}>Delete</Text>
-                </Pressable>
-                
+                </Pressable> 
             </View>
           )
     }
-
+//-----------------------------------------------------------------------------
     const renderItem = ({item}) => {
         return (
           <Item item={item}/>
         )
     }
-
+//-----------------------------------------------------------------------------
     return(
         <SafeAreaView style={styles.safeAreaView}>
             <Pressable style={styles.button} onPress={() => navigation.navigate("Add Song")}>
@@ -63,6 +86,9 @@ export default function Home({navigation}) {
             style={styles.flatList}
             data={songs}
             keyExtractor={item => item.id}
+            refreshControl={
+                <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+              }
             ListFooterComponent={() => {
             return(
                 <View style={styles.flatListBottom}/>
@@ -72,6 +98,13 @@ export default function Home({navigation}) {
             />
         </SafeAreaView>
     )
+
+    function DeleteSong(id){
+        const musicDB = new MusicDB();
+        musicDB.deleteSong(id);
+        navigation.replace("Home");
+    }
+
 }
 const styles = StyleSheet.create({
   safeAreaView: {
@@ -90,6 +123,7 @@ const styles = StyleSheet.create({
     color: 'black',
     fontSize: 18,
     marginTop: 20,
+    marginRight: 'auto'
   },
   button: {
     alignSelf: "center",
@@ -115,6 +149,7 @@ const styles = StyleSheet.create({
     marginTop: 10,
     height: 40,
     justifyContent: "center",
+
 
   },
   deleteButtonText: {

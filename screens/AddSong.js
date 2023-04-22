@@ -1,14 +1,19 @@
-import {View, Text, Pressable, StyleSheet, FlatList, SafeAreaView, Image } from "react-native";
+import {View, Text, Pressable, StyleSheet, Image } from "react-native";
 import React, {useState } from "react";
 import { TextInput } from "react-native-gesture-handler";
+import { MusicDB } from "../data/MusicDB";
+import * as Linking from 'expo-linking';
+
 export default function AddSong({navigation}) {
     const [song, setSong] = useState("");
     const [artist, setArtist] = useState("");
+    const [message, setMessage] = useState("");
 
     return (
         <View>
             <Image style={styles.image} source={require("../assets/images/MusicNotes.png")}/>
             <Text style={styles.heading}>Add Song</Text>
+            <Text style={styles.message}>{message}</Text>
             <TextInput
                placeholder="Song"
                onChangeText={setSong}
@@ -22,12 +27,23 @@ export default function AddSong({navigation}) {
             <Pressable style={styles.button} onPress={() => AddSong(song, artist)}>
                 <Text style={styles.buttonText}>Add Song</Text>
             </Pressable>
+            {/* This is a website URL that open the spotify app (if you put this into safari it will open the app) */}
+            <Pressable style={styles.button} onPress={() => Linking.openURL('https://open.spotify.com')}> 
+                <Text style={styles.buttonText}>Spotify</Text>
+            </Pressable>
         </View>
         
     )
 
     function AddSong(song, artist) {
-        console.log(song + ' - ' + artist)
+        if (song == "" || artist == ""){
+            setMessage("Song and Artist are required");
+        } else {
+            setMessage("");
+            const musicDB = new MusicDB();
+            musicDB.addSong(song, artist);
+            navigation.replace("Home");
+        }
     }
 }
 const styles = StyleSheet.create({
